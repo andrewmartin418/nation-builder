@@ -57,7 +57,7 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* Left — controls */}
-        <div className="w-80 shrink-0 border-r border-gray-800 p-6 overflow-y-auto">
+        <div className="w-72 shrink-0 border-r border-gray-800 p-6 overflow-y-auto">
           <GovernanceTab state={govState} setState={setGovState} />
         </div>
 
@@ -65,12 +65,12 @@ export default function App() {
         <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-8">
           <div>
             <p className="text-[10px] uppercase tracking-[0.15em] text-gray-600 mb-4">Political Profile</p>
-            <div className="max-w-md">
+            <div className="max-w-lg">
               <PoliticalCompass govState={govState} />
             </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-6 max-w-sm">
+          <div className="border-t border-gray-800 pt-6 max-w-lg">
             <p className="text-[10px] uppercase tracking-[0.15em] text-gray-600 mb-3">Configuration Summary</p>
             <div className="space-y-1.5 text-xs font-mono">
               {[

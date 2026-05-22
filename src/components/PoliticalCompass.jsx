@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-// ─── Axes ────────────────────────────────────────────────────────────────────
-// X: Social   — Traditional (0) ←→ Progressive (100)
-// Y: Authority — Authoritarian (0) ←→ Libertarian (100)
-// Z: Economic  — Statist (0) ←→ Laissez-faire (100)
-
 const LABEL_MAP = (v) => {
   if (v < 20) return 'Very Low'
   if (v < 40) return 'Low'
@@ -32,11 +27,7 @@ const PHILOSOPHIES = {
   laissez_faire:           { name: 'Laissez-faire',            desc: 'Free markets, minimal regulation, private enterprise.',          color: '#FAC775' },
 }
 
-// ─── Scoring ─────────────────────────────────────────────────────────────────
 export function score(state) {
-  // social: 0=Traditional, 100=Progressive
-  // authority: 0=Authoritarian, 100=Libertarian
-  // economic: 0=Statist, 100=Laissez-faire
   let social = 50, authority = 50, economic = 50
 
   switch (state.hosType) {
@@ -66,7 +57,7 @@ export function score(state) {
     case 'hard': authority += 12; break
   }
 
-  const pf = (state.execPower - 50) / 50  // -1 to +1
+  const pf = (state.execPower - 50) / 50
   authority -= pf * 30
   economic  -= pf * 10
 
@@ -77,57 +68,52 @@ export function score(state) {
   }
 }
 
-// ─── Government type label ────────────────────────────────────────────────────
 export function getGovType(state, s) {
-  if (state.hosType === 'none')                                                          return 'Stateless / Anarchic'
-  if (state.selectionMethod === 'military')                                              return 'Military Junta'
-  if (state.hosType === 'supreme_leader' && s.authority < 25)                           return 'Totalitarian State'
-  if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 40) return 'Constitutional Monarchy'
-  if (state.hosType === 'monarch' && s.authority < 30)                                  return 'Absolute Monarchy'
-  if (state.hosType === 'monarch')                                                       return 'Monarchy'
-  if (state.selectionMethod === 'lottery')                                               return 'Demarchic Republic'
-  if (state.hosType === 'council' && s.economic > 60)                                   return 'Liberal Council'
-  if (state.hosType === 'council')                                                       return 'Oligarchic Council'
-  if (state.hosType === 'president' && s.authority > 65 && s.social > 55)               return 'Liberal Democracy'
-  if (state.hosType === 'president' && s.authority < 30)                                return 'Autocratic Republic'
-  if (state.hosType === 'president' && state.selectionMethod === 'party')               return 'Single-Party Republic'
+  if (state.hosType === 'none')                                                                    return 'Stateless / Anarchic'
+  if (state.selectionMethod === 'military')                                                        return 'Military Junta'
+  if (state.hosType === 'supreme_leader' && s.authority < 25)                                     return 'Totalitarian State'
+  if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 40)  return 'Constitutional Monarchy'
+  if (state.hosType === 'monarch' && s.authority < 30)                                            return 'Absolute Monarchy'
+  if (state.hosType === 'monarch')                                                                 return 'Monarchy'
+  if (state.selectionMethod === 'lottery')                                                         return 'Demarchic Republic'
+  if (state.hosType === 'council' && s.economic > 60)                                             return 'Liberal Council'
+  if (state.hosType === 'council')                                                                 return 'Oligarchic Council'
+  if (state.hosType === 'president' && s.authority > 65 && s.social > 55)                         return 'Liberal Democracy'
+  if (state.hosType === 'president' && s.authority < 30)                                          return 'Autocratic Republic'
+  if (state.hosType === 'president' && state.selectionMethod === 'party')                         return 'Single-Party Republic'
   return 'Constitutional Republic'
 }
 
-// ─── Philosophies ─────────────────────────────────────────────────────────────
 export function getPhilosophies(state, s) {
   const p = []
 
-  if (state.hosType === 'none')                                             p.push('anarchism')
-  else if (state.hosType === 'supreme_leader' && s.authority < 25)        p.push('totalitarianism')
-  else if (state.selectionMethod === 'military')                            p.push('militarism')
-  else if (state.selectionMethod === 'lottery')                             p.push('sortition')
+  if (state.hosType === 'none')                                                              p.push('anarchism')
+  else if (state.hosType === 'supreme_leader' && s.authority < 25)                         p.push('totalitarianism')
+  else if (state.selectionMethod === 'military')                                             p.push('militarism')
+  else if (state.selectionMethod === 'lottery')                                              p.push('sortition')
   else if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 35) p.push('constitutional_monarchy')
-  else if (state.hosType === 'monarch')                                     p.push('monarchism')
+  else if (state.hosType === 'monarch')                                                      p.push('monarchism')
 
-  if (s.authority > 65 && s.social > 55 && state.hosType !== 'none')      p.push('liberal_democracy')
-  if (state.hosType === 'president' && s.authority > 50)                   p.push('republicanism')
-  if (s.authority < 30 && !p.includes('totalitarianism') && !p.includes('militarism')) p.push('authoritarianism')
-  if (state.selectionMethod === 'party')                                    p.push('oligarchy')
-  if (state.hosType === 'council' && state.selectionMethod !== 'popular')  p.push('technocracy')
+  if (s.authority > 65 && s.social > 55 && state.hosType !== 'none')                       p.push('liberal_democracy')
+  if (state.hosType === 'president' && s.authority > 50)                                    p.push('republicanism')
+  if (s.authority < 30 && !p.includes('totalitarianism') && !p.includes('militarism'))     p.push('authoritarianism')
+  if (state.selectionMethod === 'party')                                                     p.push('oligarchy')
+  if (state.hosType === 'council' && state.selectionMethod !== 'popular')                   p.push('technocracy')
 
-  if (s.social < 30)       p.push('conservatism')
-  else if (s.social > 70)  p.push('progressivism')
-  if (s.authority > 75)    p.push('libertarianism')
-  if (s.economic < 25)     p.push('statism')
+  if (s.social < 30)        p.push('conservatism')
+  else if (s.social > 70)   p.push('progressivism')
+  if (s.authority > 75)     p.push('libertarianism')
+  if (s.economic < 25)      p.push('statism')
   else if (s.economic > 75) p.push('laissez_faire')
 
   const seen = new Set()
   return p.filter(k => { if (seen.has(k)) return false; seen.add(k); return true }).slice(0, 5)
 }
 
-// ─── 3D projection helpers ────────────────────────────────────────────────────
 function rotatePoint(x, y, z, rx, ry) {
-  // rotate around X axis
   const cosX = Math.cos(rx), sinX = Math.sin(rx)
   const y1 = y * cosX - z * sinX
   const z1 = y * sinX + z * cosX
-  // rotate around Y axis
   const cosY = Math.cos(ry), sinY = Math.sin(ry)
   const x2 = x * cosY + z1 * sinY
   const z2 = -x * sinY + z1 * cosY
@@ -140,122 +126,136 @@ function project(x, y, z, cx, cy, scale) {
   return [cx + x * scale * depth, cy - y * scale * depth, z]
 }
 
-// ─── Canvas draw ──────────────────────────────────────────────────────────────
 function drawCompass(canvas, s, rotX, rotY) {
   if (!canvas) return
   const ctx = canvas.getContext('2d')
   const W = canvas.width, H = canvas.height
   const cx = W / 2, cy = H / 2
-  const SCALE = 100
+  const SCALE = 160
 
   ctx.clearRect(0, 0, W, H)
 
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-  const gridC  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)'
-  const axisC  = isDark ? 'rgba(255,255,255,0.3)'  : 'rgba(0,0,0,0.35)'
-  const labelC = isDark ? 'rgba(255,255,255,0.5)'  : 'rgba(0,0,0,0.6)'
-  const dimC   = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.2)'
+  const gridC = isDark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.16)'
+
+  // Depth helper
+  const edgeDepth = (x1,y1,z1,x2,y2,z2) => {
+    const [,,az] = pr(x1,y1,z1)
+    const [,,bz] = pr(x2,y2,z2)
+    return (az + bz) / 2
+  }
+
+  const depthLine = (x1,y1,z1,x2,y2,z2, dash=[]) => {
+    const d = edgeDepth(x1,y1,z1,x2,y2,z2)
+    const t = Math.max(0, Math.min(1, (d + 1.5) / 3))
+    const alpha = isDark ? 0.08 + (1 - t) * 0.45 : 0.06 + (1 - t) * 0.4
+    const width = 0.5 + (1 - t) * 1.2
+    const color = isDark ? `rgba(255,255,255,${alpha.toFixed(2)})` : `rgba(0,0,0,${alpha.toFixed(2)})`
+    line(x1,y1,z1,x2,y2,z2, color, width, dash)
+  }
+
+  const dimC  = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.2)'
 
   const pr = (x, y, z) => {
     const [rx, ry, rz] = rotatePoint(x, y, z, rotX, rotY)
     return project(rx, ry, rz, cx, cy, SCALE)
   }
 
-  const line = (x1,y1,z1, x2,y2,z2, color, width, dash=[]) => {
-    const [ax, ay] = pr(x1,y1,z1)
-    const [bx, by] = pr(x2,y2,z2)
+  const line = (x1, y1, z1, x2, y2, z2, color, width, dash = []) => {
+    const [ax, ay] = pr(x1, y1, z1)
+    const [bx, by] = pr(x2, y2, z2)
     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by)
     ctx.strokeStyle = color; ctx.lineWidth = width
     ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([])
   }
 
-  // cube wireframe — back faces first (dashed)
-  line(-1,-1, 1,  1,-1, 1,  gridC, 0.5, [3,3])
-  line(-1, 1, 1,  1, 1, 1,  gridC, 0.5, [3,3])
-  line(-1,-1, 1, -1, 1, 1,  gridC, 0.5, [3,3])
-  line( 1,-1, 1,  1, 1, 1,  gridC, 0.5, [3,3])
-  line(-1,-1,-1, -1,-1, 1,  gridC, 0.5, [3,3])
-  line( 1,-1,-1,  1,-1, 1,  gridC, 0.5, [3,3])
-  line(-1, 1,-1, -1, 1, 1,  gridC, 0.5, [3,3])
-  line( 1, 1,-1,  1, 1, 1,  gridC, 0.5, [3,3])
-  // front face edges
-  line(-1,-1,-1,  1,-1,-1,  gridC, 0.5)
-  line(-1, 1,-1,  1, 1,-1,  gridC, 0.5)
-  line(-1,-1,-1, -1, 1,-1,  gridC, 0.5)
-  line( 1,-1,-1,  1, 1,-1,  gridC, 0.5)
+  // cube wireframe — brightness driven by depth
+  depthLine(-1,-1, 1,  1,-1, 1)
+  depthLine(-1, 1, 1,  1, 1, 1)
+  depthLine(-1,-1, 1, -1, 1, 1)
+  depthLine( 1,-1, 1,  1, 1, 1)
+  depthLine(-1,-1,-1, -1,-1, 1)
+  depthLine( 1,-1,-1,  1,-1, 1)
+  depthLine(-1, 1,-1, -1, 1, 1)
+  depthLine( 1, 1,-1,  1, 1, 1)
+  depthLine(-1,-1,-1,  1,-1,-1)
+  depthLine(-1, 1,-1,  1, 1,-1)
+  depthLine(-1,-1,-1, -1, 1,-1)
+  depthLine( 1,-1,-1,  1, 1,-1)
 
-  // grid lines on the floor (y=-1 plane)
+  // floor grid
   for (let i = -1; i <= 1; i += 0.5) {
-    line(-1,-1,i, 1,-1,i, gridC, 0.3)
-    line(i,-1,-1, i,-1,1, gridC, 0.3)
+    line(-1,-1,i, 1,-1,i, gridC, 0.4)
+    line(i,-1,-1, i,-1,1, gridC, 0.4)
   }
 
-  // main axes from origin (0,0,0) to +1
-  // X = Social (Traditional → Progressive) — amber
-  line(0,0,0, 1,0,0, '#EF9F27', 2)
-  line(0,0,0,-1,0,0, dimC, 1, [4,4])
-  // Y = Authority (Authoritarian → Libertarian) — violet
-  line(0,0,0, 0,1,0, '#7F77DD', 2)
-  line(0,0,0, 0,-1,0, dimC, 1, [4,4])
-  // Z = Economic (Statist → Laissez-faire) — teal
-  line(0,0,0, 0,0,1, '#1D9E75', 2)
-  line(0,0,0, 0,0,-1, dimC, 1, [4,4])
+  const sPos = s.social    >= 50
+  const aPos = s.authority >= 50
+  const ePos = s.economic  >= 50
 
-  // axis tip arrowheads (small dots)
-  const dot = (x,y,z, color, r=4) => {
-    const [px,py] = pr(x,y,z)
-    ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2)
+  // X = Social
+  line(0,0,0,  1,0,0,  sPos ? '#EF9F27' : dimC, sPos ? 2.5 : 1,  sPos ? [] : [4,4])
+  line(0,0,0, -1,0,0, !sPos ? '#EF9F27' : dimC, !sPos ? 2.5 : 1, !sPos ? [] : [4,4])
+  // Y = Authority
+  line(0,0,0,  0,1,0,  aPos ? '#7F77DD' : dimC, aPos ? 2.5 : 1,  aPos ? [] : [4,4])
+  line(0,0,0,  0,-1,0, !aPos ? '#7F77DD' : dimC, !aPos ? 2.5 : 1, !aPos ? [] : [4,4])
+  // Z = Economic
+  line(0,0,0,  0,0,1,  ePos ? '#1D9E75' : dimC, ePos ? 2.5 : 1,  ePos ? [] : [4,4])
+  line(0,0,0,  0,0,-1, !ePos ? '#1D9E75' : dimC, !ePos ? 2.5 : 1, !ePos ? [] : [4,4])
+
+  // axis end dots
+  const dot = (x, y, z, color, r = 4) => {
+    const [px, py] = pr(x, y, z)
+    ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2)
     ctx.fillStyle = color; ctx.fill()
   }
-  dot( 1,0,0, '#EF9F27', 3)
-  dot( 0,1,0, '#7F77DD', 3)
-  dot( 0,0,1, '#1D9E75', 3)
+  dot(sPos ? 1 : -1, 0, 0, '#EF9F27', 4)
+  dot(0, aPos ? 1 : -1, 0, '#7F77DD', 4)
+  dot(0, 0, ePos ? 1 : -1, '#1D9E75', 4)
 
-  // axis labels
-  ctx.font = '500 11px monospace'
+  // axis labels — larger font for readability
+  ctx.font = '600 12px monospace'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  const lbl = (x,y,z, text, color, offsetX=0, offsetY=0) => {
-    const [px,py] = pr(x,y,z)
+  const lbl = (x, y, z, text, color) => {
+    const [px, py] = pr(x, y, z)
     ctx.fillStyle = color
-    ctx.fillText(text, px+offsetX, py+offsetY)
+    ctx.fillText(text, px, py)
   }
 
-  lbl( 1.25,0,0,   'Progressive', '#EF9F27')
-  lbl(-1.25,0,0,   'Traditional', dimC)
-  lbl( 0, 1.25,0,  'Libertarian', '#7F77DD')
-  lbl( 0,-1.25,0,  'Authoritarian', dimC)
-  lbl( 0, 0, 1.25, 'Laissez-faire', '#1D9E75')
-  lbl( 0, 0,-1.25, 'Statist', dimC)
+  lbl( 1.35, 0, 0, 'Progressive',   sPos ? '#EF9F27' : dimC)
+  lbl(-1.35, 0, 0, 'Traditional',  !sPos ? '#EF9F27' : dimC)
+  lbl(0,  1.35, 0, 'Libertarian',   aPos ? '#7F77DD' : dimC)
+  lbl(0, -1.35, 0, 'Authoritarian', !aPos ? '#7F77DD' : dimC)
+  lbl(0, 0,  1.35, 'Laissez-faire', ePos ? '#1D9E75' : dimC)
+  lbl(0, 0, -1.35, 'Statist',       !ePos ? '#1D9E75' : dimC)
 
-  // ── Plot the country's position ──────────────────────────────────────────
-  // convert 0–100 scores to -1…+1 cube coordinates
-  const px3 = (s.social    / 50) - 1   // X: Traditional(-1) → Progressive(+1)
-  const py3 = (s.authority / 50) - 1   // Y: Authoritarian(-1) → Libertarian(+1)
-  const pz3 = (s.economic  / 50) - 1   // Z: Statist(-1) → Laissez-faire(+1)
+  // position point
+  const px3 = (s.social    / 50) - 1
+  const py3 = (s.authority / 50) - 1
+  const pz3 = (s.economic  / 50) - 1
 
-  // draw faint projection lines to the floor so depth is readable
-  line(px3,py3,pz3, px3,-1,pz3, isDark?'rgba(255,255,255,0.12)':'rgba(0,0,0,0.1)', 1, [3,3])
+  // projection lines to floor
+  line(px3,py3,pz3, px3,-1,pz3, isDark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)', 1, [3,3])
   line(px3,-1,pz3,  px3,-1,-1,  isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.07)', 1, [2,4])
-  line(px3,-1,pz3, -1,-1,pz3,   isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.07)', 1, [2,4])
+  line(px3,-1,pz3,  -1,-1,pz3,  isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.07)', 1, [2,4])
 
-  // glow ring behind the dot
+  // glow
   const [dotX, dotY] = pr(px3, py3, pz3)
-  ctx.beginPath(); ctx.arc(dotX, dotY, 9, 0, Math.PI*2)
-  ctx.fillStyle = isDark ? 'rgba(127,119,221,0.25)' : 'rgba(127,119,221,0.2)'
+  ctx.beginPath(); ctx.arc(dotX, dotY, 14, 0, Math.PI * 2)
+  ctx.fillStyle = isDark ? 'rgba(127,119,221,0.2)' : 'rgba(127,119,221,0.15)'
   ctx.fill()
 
-  // the main dot
-  ctx.beginPath(); ctx.arc(dotX, dotY, 6, 0, Math.PI*2)
+  // dot
+  ctx.beginPath(); ctx.arc(dotX, dotY, 8, 0, Math.PI * 2)
   ctx.fillStyle = '#7F77DD'
   ctx.fill()
-  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.9)'
-  ctx.lineWidth = 1.5
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.95)'
+  ctx.lineWidth = 2
   ctx.stroke()
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function PoliticalCompass({ govState }) {
   const canvasRef = useRef(null)
   const [rot, setRot] = useState({ x: 0.4, y: 0.6 })
@@ -269,7 +269,6 @@ export default function PoliticalCompass({ govState }) {
     drawCompass(canvasRef.current, s, rot.x, rot.y)
   })
 
-  // ── Mouse drag ──────────────────────────────────────────────────────────
   const onMouseDown = useCallback((e) => {
     dragRef.current = { x: e.clientX, y: e.clientY, rot: { ...rot } }
   }, [rot])
@@ -279,14 +278,13 @@ export default function PoliticalCompass({ govState }) {
     const dx = e.clientX - dragRef.current.x
     const dy = e.clientY - dragRef.current.y
     setRot({
-      x: dragRef.current.rot.x - dy * 0.008,
-      y: dragRef.current.rot.y + dx * 0.008,
+      x: dragRef.current.rot.x + dy * 0.008,
+      y: dragRef.current.rot.y - dx * 0.008,
     })
   }, [])
 
   const onMouseUp = useCallback(() => { dragRef.current = null }, [])
 
-  // ── Touch drag ──────────────────────────────────────────────────────────
   const onTouchStart = useCallback((e) => {
     const t = e.touches[0]
     dragRef.current = { x: t.clientX, y: t.clientY, rot: { ...rot } }
@@ -298,26 +296,24 @@ export default function PoliticalCompass({ govState }) {
     const dx = t.clientX - dragRef.current.x
     const dy = t.clientY - dragRef.current.y
     setRot({
-      x: dragRef.current.rot.x - dy * 0.008,
-      y: dragRef.current.rot.y + dx * 0.008,
+      x: dragRef.current.rot.x + dy * 0.008,
+      y: dragRef.current.rot.y - dx * 0.008,
     })
   }, [])
 
   const axes = [
-    { label: 'Social',    val: s.social,    lo: 'Traditional', hi: 'Progressive', color: '#EF9F27' },
-    { label: 'Authority', val: s.authority, lo: 'Authoritarian', hi: 'Libertarian', color: '#7F77DD' },
-    { label: 'Economic',  val: s.economic,  lo: 'Statist',      hi: 'Laissez-faire', color: '#1D9E75' },
+    { label: 'Social',    val: s.social,    lo: 'Traditional',  hi: 'Progressive',   color: '#EF9F27' },
+    { label: 'Authority', val: s.authority, lo: 'Authoritarian', hi: 'Libertarian',  color: '#7F77DD' },
+    { label: 'Economic',  val: s.economic,  lo: 'Statist',       hi: 'Laissez-faire', color: '#1D9E75' },
   ]
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
 
-      {/* Government type badge */}
       <span className="text-xs uppercase tracking-widest text-gray-400 border border-gray-700 rounded-full px-3 py-1">
         {govType}
       </span>
 
-      {/* Axis bars */}
       <div className="w-full space-y-2">
         {axes.map(a => (
           <div key={a.label}>
@@ -337,13 +333,12 @@ export default function PoliticalCompass({ govState }) {
         ))}
       </div>
 
-      {/* 3D Canvas */}
-      <div className="relative">
+      <div className="relative w-full">
         <canvas
           ref={canvasRef}
-          width={300}
-          height={300}
-          className="cursor-grab active:cursor-grabbing rounded-lg"
+          width={480}
+          height={480}
+          className="cursor-grab active:cursor-grabbing rounded-lg w-full"
           style={{ touchAction: 'none' }}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
@@ -356,7 +351,6 @@ export default function PoliticalCompass({ govState }) {
         <p className="text-center text-[10px] text-gray-700 mt-1">drag to rotate</p>
       </div>
 
-      {/* Philosophies */}
       <div className="w-full space-y-3 pt-1 border-t border-gray-800">
         {phils.map(key => {
           const ph = PHILOSOPHIES[key]
