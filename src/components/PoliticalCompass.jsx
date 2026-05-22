@@ -30,6 +30,13 @@ const PHILOSOPHIES = {
 export function score(state) {
   let social = 50, authority = 50, economic = 50
 
+  switch (state.legislatureStructure) {
+    case 'none':        authority -= 20; economic += 5;  break
+    case 'unicameral':  authority += 5;                  break
+    case 'bicameral':   authority += 10; social -= 5;    break
+    case 'tricameral':  authority += 15; social -= 10;   break
+  }
+
   switch (state.hosType) {
     case 'monarch':        social -= 20; authority -= 20; break
     case 'president':      authority += 5; break
@@ -69,30 +76,50 @@ export function score(state) {
 }
 
 export function getGovType(state, s) {
-  if (state.hosType === 'none')                                                                    return 'Stateless / Anarchic'
-  if (state.selectionMethod === 'military')                                                        return 'Military Junta'
-  if (state.hosType === 'supreme_leader' && s.authority < 25)                                     return 'Totalitarian State'
-  if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 40)  return 'Constitutional Monarchy'
-  if (state.hosType === 'monarch' && s.authority < 30)                                            return 'Absolute Monarchy'
-  if (state.hosType === 'monarch')                                                                 return 'Monarchy'
-  if (state.selectionMethod === 'lottery')                                                         return 'Demarchic Republic'
-  if (state.hosType === 'council' && s.economic > 60)                                             return 'Liberal Council'
-  if (state.hosType === 'council')                                                                 return 'Oligarchic Council'
-  if (state.hosType === 'president' && s.authority > 65 && s.social > 55)                         return 'Liberal Democracy'
-  if (state.hosType === 'president' && s.authority < 30)                                          return 'Autocratic Republic'
-  if (state.hosType === 'president' && state.selectionMethod === 'party')                         return 'Single-Party Republic'
-  return 'Constitutional Republic'
+  // ── Base government type ────────────────────────────────
+  let base = 'Constitutional Republic'
+
+  if (state.hosType === 'none')                                                                   base = 'Stateless / Anarchic'
+  else if (state.selectionMethod === 'military' && state.hosType === 'monarch')                  base = 'Monarchic Military Junta'
+  else if (state.selectionMethod === 'military')                                                  base = 'Military Junta'
+  else if (state.hosType === 'supreme_leader' && s.authority < 25)                               base = 'Totalitarian State'
+  else if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 40) base = 'Constitutional Monarchy'
+  else if (state.hosType === 'monarch' && s.authority < 30)                                      base = 'Absolute Monarchy'
+  else if (state.hosType === 'monarch')                                                           base = 'Monarchy'
+  else if (state.selectionMethod === 'lottery')                                                   base = 'Demarchic Republic'
+  else if (state.hosType === 'council' && s.economic > 60)                                       base = 'Liberal Council'
+  else if (state.hosType === 'council')                                                           base = 'Oligarchic Council'
+  else if (state.hosType === 'president' && s.authority > 65 && s.social > 55)                   base = 'Liberal Democracy'
+  else if (state.hosType === 'president' && s.authority < 30)                                    base = 'Autocratic Republic'
+  else if (state.hosType === 'president' && state.selectionMethod === 'party')                   base = 'Single-Party Republic'
+
+  // ── Adjective prefixes ──────────────────────────────────
+  const prefixes = []
+
+  if (state.legislatureStructure === 'none' && !['Absolute Monarchy', 'Totalitarian State'].includes(base))
+    prefixes.push('Autocratic')
+
+  if (state.hosType === 'monarch' && state.selectionMethod !== 'hereditary' && base !== 'Monarchic Military Junta')
+    prefixes.push('Elective')
+  // Future examples:
+  // if (state.stateReligion === 'enforced')    prefixes.push('Theocratic')
+  // if (state.decentralization > 75)           prefixes.push('Federal')
+  // if (state.pressFreedome < 20)              prefixes.push('Censored')
+
+  return prefixes.length > 0
+    ? `${prefixes.join(' ')} ${base}`
+    : base
 }
 
 export function getPhilosophies(state, s) {
   const p = []
 
-  if (state.hosType === 'none')                                                              p.push('anarchism')
-  else if (state.hosType === 'supreme_leader' && s.authority < 25)                         p.push('totalitarianism')
-  else if (state.selectionMethod === 'military')                                             p.push('militarism')
-  else if (state.selectionMethod === 'lottery')                                              p.push('sortition')
-  else if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 35) p.push('constitutional_monarchy')
-  else if (state.hosType === 'monarch')                                                      p.push('monarchism')
+  if (state.hosType === 'none')                                                                          p.push('anarchism')
+  if (state.hosType === 'supreme_leader' && s.authority < 25)                                           p.push('totalitarianism')
+  if (state.selectionMethod === 'military')                                                              p.push('militarism')
+  if (state.selectionMethod === 'lottery')                                                               p.push('sortition')
+  if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 35)        p.push('constitutional_monarchy')
+  else if (state.hosType === 'monarch')                                                                  p.push('monarchism')
 
   if (s.authority > 65 && s.social > 55 && state.hosType !== 'none')                       p.push('liberal_democracy')
   if (state.hosType === 'president' && s.authority > 50)                                    p.push('republicanism')

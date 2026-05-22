@@ -1,6 +1,36 @@
+import { useState } from 'react'
+
+function Section({ title, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="border-b border-gray-800 last:border-b-0">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between py-3 text-left group"
+      >
+        <span className="text-[10px] uppercase tracking-[0.15em] text-gray-500 group-hover:text-gray-400 transition-colors">
+          {title}
+        </span>
+        <span className={`text-gray-500 text-lg leading-none transition-all duration-300 ease-in-out ${open ? 'rotate-180' : 'rotate-0'}`}
+          style={{ display: 'inline-block' }}>
+          ▾
+        </span>
+      </button>
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: open ? '2000px' : '0px', opacity: open ? 1 : 0 }}
+      >
+        <div className="pb-4">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Field({ label, value, children }) {
   return (
-    <div className="mb-5">
+    <div className="mb-5 last:mb-0">
       <div className="flex justify-between items-center mb-1.5">
         <label className="text-xs text-gray-400 uppercase tracking-wider">{label}</label>
         {value && <span className="text-xs font-mono font-medium text-gray-200">{value}</span>}
@@ -75,6 +105,13 @@ const SELECTION_METHODS_ALL = [
   { value: 'lottery',      label: 'Lottery / sortition' },
 ]
 
+const LEGISLATURE_STRUCTURE = [
+  { value: 'none',         label: 'None' },
+  { value: 'unicameral',         label: 'Unicameral' },
+  { value: 'bicameral',         label: 'Bicameral' },
+  { value: 'tricameral',         label: 'Tricameral' }
+]
+
 const TERM_LIMITS = [
   { value: 'none',  label: 'None' },
   { value: 'soft',  label: 'Soft' },
@@ -102,60 +139,78 @@ export default function GovernanceTab({ state, setState }) {
 
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-[0.15em] text-gray-600 mb-5">Head of State</p>
+      <Section title="Head of State">
+        <Field label="Type">
+          <SelectInput
+            value={state.hosType}
+            onChange={v => setState(s => ({ ...s, hosType: v }))}
+            options={HOS_TYPES}
+          />
+        </Field>
 
-      <Field label="Type">
-        <SelectInput
-          value={state.hosType}
-          onChange={v => setState(s => ({ ...s, hosType: v }))}
-          options={HOS_TYPES}
-        />
-      </Field>
+        <Field label="Selection Method">
+          <SelectInput
+            value={state.selectionMethod}
+            onChange={v => setState(s => ({ ...s, selectionMethod: v }))}
+            options={SELECTION_METHODS_ALL}
+          />
+        </Field>
 
-      <Field label="Selection Method">
-        <SelectInput
-          value={state.selectionMethod}
-          onChange={v => setState(s => ({ ...s, selectionMethod: v }))}
-          options={SELECTION_METHODS_ALL}
-        />
-      </Field>
+        <div className={`transition-opacity duration-200 ${dimmed ? 'opacity-30 pointer-events-none' : ''}`}>
+          <Field label="Term Length" value={termLabel(state.termLength, isHereditary)}>
+            <RangeInput
+              value={state.termLength}
+              onChange={v => setState(s => ({ ...s, termLength: v }))}
+              min={1}
+              max={40}
+            />
+            <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+              <span>1 year</span><span>Lifetime</span>
+            </div>
+          </Field>
 
-      <div className={`transition-opacity duration-200 ${dimmed ? 'opacity-30 pointer-events-none' : ''}`}>
-        <Field label="Term Length" value={termLabel(state.termLength, isHereditary)}>
+          <Field label="Term Limits">
+            <ToggleGroup
+              value={state.termLimits}
+              onChange={v => setState(s => ({ ...s, termLimits: v }))}
+              options={TERM_LIMITS}
+            />
+          </Field>
+        </div>
+
+        <div className="border-t border-gray-800 my-4" />
+
+        <Field label="Executive Power" value={powerLabel(state.execPower)}>
           <RangeInput
-            value={state.termLength}
-            onChange={v => setState(s => ({ ...s, termLength: v }))}
-            min={1}
-            max={40}
+            value={state.execPower}
+            onChange={v => setState(s => ({ ...s, execPower: v }))}
+            min={0}
+            max={100}
           />
           <div className="flex justify-between text-[10px] text-gray-600 mt-1">
-            <span>1 year</span><span>Lifetime</span>
+            <span>Figurehead</span><span>Absolute</span>
           </div>
         </Field>
+      </Section>
 
-        <Field label="Term Limits">
-          <ToggleGroup
-            value={state.termLimits}
-            onChange={v => setState(s => ({ ...s, termLimits: v }))}
-            options={TERM_LIMITS}
+      <Section title="Legislature">
+          <Field label="Structure">
+          <SelectInput
+            value={state.legislatureStructure}
+            onChange={v => setState(s => ({ ...s, legislatureStructure: v }))}
+            options={LEGISLATURE_STRUCTURE}
           />
         </Field>
-      </div>
+      </Section>
 
-      <div className="border-t border-gray-800 my-5" />
-
-      <Field label="Executive Power" value={powerLabel(state.execPower)}>
-        <RangeInput
-          value={state.execPower}
-          onChange={v => setState(s => ({ ...s, execPower: v }))}
-          min={0}
-          max={100}
-        />
-        <div className="flex justify-between text-[10px] text-gray-600 mt-1">
-          <span>Figurehead</span><span>Absolute</span>
-        </div>
-      </Field>
-
+      {/* Future sections go here, e.g:
+      <Section title="Legislature" defaultOpen={false}>
+        ...fields...
+      </Section>
+      <Section title="Judiciary" defaultOpen={false}>
+        ...fields...
+      </Section>
+      */}
     </div>
   )
 }

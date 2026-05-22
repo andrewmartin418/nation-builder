@@ -8,6 +8,7 @@ const DEFAULT_STATE = {
   termLength:      4,
   termLimits:      'hard',
   execPower:       50,
+  legislatureStructure: 'bicameral'
 }
 
 const TABS = ['Governance', 'Economy', 'Society', 'Foreign Policy']
@@ -20,25 +21,25 @@ export default function App() {
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
 
       {/* Header */}
-      <header className="border-b border-gray-800 px-8 py-5 flex items-baseline gap-4">
-        <h1 style={{ fontFamily: 'Georgia, serif' }} className="text-xl font-semibold tracking-wide text-gray-100">
+      <header className="border-b border-gray-800 px-4 md:px-8 py-4 flex items-baseline gap-4">
+        <h1 style={{ fontFamily: 'Georgia, serif' }} className="text-lg md:text-xl font-semibold tracking-wide text-gray-100">
           Nation Builder
         </h1>
-        <span className="text-[10px] uppercase tracking-[0.15em] text-gray-600">
+        <span className="text-[10px] uppercase tracking-[0.15em] text-gray-600 hidden sm:block">
           Governance Configuration
         </span>
       </header>
 
       {/* Tabs */}
-      <div className="border-b border-gray-800 px-8 flex gap-0">
+      <div className="border-b border-gray-800 px-4 md:px-8 flex overflow-x-auto">
         {TABS.map(tab => {
-          const isActive  = tab === activeTab
-          const isLocked  = tab !== 'Governance'
+          const isActive = tab === activeTab
+          const isLocked = tab !== 'Governance'
           return (
             <button
               key={tab}
               onClick={() => !isLocked && setActiveTab(tab)}
-              className={`text-xs uppercase tracking-wider px-4 py-3 border-b-2 transition-colors ${
+              className={`text-[10px] md:text-xs uppercase tracking-wider px-3 md:px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
                 isActive
                   ? 'border-violet-500 text-gray-100'
                   : isLocked
@@ -47,47 +48,50 @@ export default function App() {
               }`}
             >
               {tab}
-              {isLocked && <span className="ml-1.5 text-[9px] text-gray-700">—</span>}
             </button>
           )
         })}
       </div>
 
-      {/* Main layout */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Main layout — stacks vertically on mobile, side-by-side on desktop */}
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
 
-        {/* Left — controls */}
-        <div className="w-72 shrink-0 border-r border-gray-800 p-6 overflow-y-auto">
-          <GovernanceTab state={govState} setState={setGovState} />
-        </div>
+        {/* Left panel — controls + profile info */}
+        <div className="lg:w-80 lg:shrink-0 lg:border-r border-b lg:border-b-0 border-gray-800 flex flex-col">
 
-        {/* Right — compass output */}
-        <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-8">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.15em] text-gray-600 mb-4">Political Profile</p>
-            <div className="max-w-lg">
-              <PoliticalCompass govState={govState} />
-            </div>
+          {/* Scrollable controls */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            <GovernanceTab state={govState} setState={setGovState} />
           </div>
 
-          <div className="border-t border-gray-800 pt-6 max-w-lg">
-            <p className="text-[10px] uppercase tracking-[0.15em] text-gray-600 mb-3">Configuration Summary</p>
-            <div className="space-y-1.5 text-xs font-mono">
+          {/* Config summary — pinned at bottom on desktop, inline on mobile */}
+          <div className="border-t border-gray-800 px-4 md:px-6 py-4">
+            <p className="text-[10px] uppercase tracking-[0.15em] text-gray-600 mb-2">Summary</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
               {[
-                ['Head of State',    govState.hosType.replace('_', ' ')],
-                ['Selection',        govState.selectionMethod.replace('_', ' ')],
-                ['Term Length',      govState.termLength >= 40 ? 'Lifetime' : `${govState.termLength} years`],
-                ['Term Limits',      govState.termLimits],
-                ['Executive Power',  `${govState.execPower} / 100`],
+                ['Head of State',   govState.hosType.replace(/_/g, ' ')],
+                ['Selection',       govState.selectionMethod.replace(/_/g, ' ')],
+                ['Term Length',     govState.termLength >= 40 ? 'Lifetime' : `${govState.termLength} yrs`],
+                ['Term Limits',     govState.termLimits],
+                ['Exec. Power',     `${govState.execPower} / 100`],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between">
-                  <span className="text-gray-600">{k}</span>
-                  <span className="text-gray-300 capitalize">{v}</span>
+                <div key={k} className="contents">
+                  <span className="text-gray-600 truncate">{k}</span>
+                  <span className="text-gray-300 capitalize truncate text-right">{v}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Right panel — compass fills remaining space */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center justify-start">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-gray-600 mb-4 self-start">Political Profile</p>
+          <div className="w-full max-w-lg">
+            <PoliticalCompass govState={govState} />
+          </div>
+        </div>
+
       </div>
     </div>
   )
