@@ -25,6 +25,12 @@ const PHILOSOPHIES = {
   libertarianism:          { name: 'Libertarianism',           desc: 'Maximum individual freedom, minimal state interference.',         color: '#97C459' },
   statism:                 { name: 'Statism',                  desc: 'Strong centralised state as the engine of social order.',        color: '#F0997B' },
   laissez_faire:           { name: 'Laissez-faire',            desc: 'Free markets, minimal regulation, private enterprise.',          color: '#FAC775' },
+  parliamentarism:         { name: 'Parliamentarism',           desc: 'Executive power derived from and accountable to the legislature.', color: '#4A90D9' },
+  bicameralism:            { name: 'Bicameralism',              desc: 'Two-chamber legislature as a structural check on hasty lawmaking.', color: '#6B7FD4' },
+  consociationalism:       { name: 'Consociationalism',         desc: 'Power-sharing across chambers or factions to ensure broad stability.', color: '#9B7FD4' },
+  caesarism:               { name: 'Caesarism',                 desc: 'Personal rule legitimised by popular support, bypassing institutions.', color: '#C0392B' },
+  bonapartism:             { name: 'Bonapartism',               desc: 'Strong executive authority combined with nominal popular sovereignty.', color: '#E67E22' },
+  council_democracy:       { name: 'Council Democracy',         desc: 'Governance through representative worker or citizen councils.',    color: '#27AE60' },
 }
 
 export function score(state) {
@@ -79,32 +85,48 @@ export function getGovType(state, s) {
   // ── Base government type ────────────────────────────────
   let base = 'Constitutional Republic'
 
-  if (state.hosType === 'none')                                                                   base = 'Stateless / Anarchic'
-  else if (state.selectionMethod === 'military' && state.hosType === 'monarch')                  base = 'Monarchic Military Junta'
-  else if (state.selectionMethod === 'military')                                                  base = 'Military Junta'
-  else if (state.hosType === 'supreme_leader' && s.authority < 25)                               base = 'Totalitarian State'
+  if (state.hosType === 'none')                                                                        base = 'Stateless / Anarchic'
+  else if (state.selectionMethod === 'military' && state.hosType === 'monarch')                        base = 'Monarchic Military Junta'
+  else if (state.selectionMethod === 'military')                                                       base = 'Military Junta'
+  else if (state.hosType === 'supreme_leader' && s.authority < 25)                                    base = 'Totalitarian State'
   else if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 40) base = 'Constitutional Monarchy'
-  else if (state.hosType === 'monarch' && s.authority < 30)                                      base = 'Absolute Monarchy'
-  else if (state.hosType === 'monarch')                                                           base = 'Monarchy'
-  else if (state.selectionMethod === 'lottery')                                                   base = 'Demarchic Republic'
-  else if (state.hosType === 'council' && s.economic > 60)                                       base = 'Liberal Council'
-  else if (state.hosType === 'council')                                                           base = 'Oligarchic Council'
-  else if (state.hosType === 'president' && s.authority > 65 && s.social > 55)                   base = 'Liberal Democracy'
-  else if (state.hosType === 'president' && s.authority < 30)                                    base = 'Autocratic Republic'
-  else if (state.hosType === 'president' && state.selectionMethod === 'party')                   base = 'Single-Party Republic'
+  else if (state.hosType === 'monarch' && s.authority < 30)                                           base = 'Absolute Monarchy'
+  else if (state.hosType === 'monarch')                                                                base = 'Monarchy'
+  else if (state.selectionMethod === 'lottery')                                                        base = 'Demarchic Republic'
+  else if (state.hosType === 'council' && state.legislatureStructure === 'tricameral')                 base = 'Federal Council Republic'
+  else if (state.hosType === 'council' && s.economic > 60)                                            base = 'Liberal Council'
+  else if (state.hosType === 'council')                                                                base = 'Oligarchic Council'
+  else if (state.hosType === 'president' && state.legislatureStructure === 'bicameral' && s.authority > 65 && s.social > 55) base = 'Liberal Democracy'
+  else if (state.hosType === 'president' && state.legislatureStructure === 'unicameral' && s.authority > 60) base = 'Unicameral Republic'
+  else if (state.hosType === 'president' && state.legislatureStructure === 'tricameral')               base = 'Tricameral Republic'
+  else if (state.hosType === 'president' && s.authority > 65 && s.social > 55)                        base = 'Liberal Democracy'
+  else if (state.hosType === 'president' && s.authority < 30)                                         base = 'Autocratic Republic'
+  else if (state.hosType === 'president' && state.selectionMethod === 'party')                        base = 'Single-Party Republic'
 
   // ── Adjective prefixes ──────────────────────────────────
   const prefixes = []
+  const noLeg = state.legislatureStructure === 'none'
+  const suppress = ['Absolute Monarchy', 'Totalitarian State', 'Stateless / Anarchic', 'Military Junta', 'Monarchic Military Junta']
 
-  if (state.legislatureStructure === 'none' && !['Absolute Monarchy', 'Totalitarian State'].includes(base))
+  // No legislature — executive is unchecked
+  if (noLeg && !suppress.includes(base))
     prefixes.push('Autocratic')
 
+  // Elective monarchy — any non-hereditary monarch
   if (state.hosType === 'monarch' && state.selectionMethod !== 'hereditary' && base !== 'Monarchic Military Junta')
     prefixes.push('Elective')
-  // Future examples:
-  // if (state.stateReligion === 'enforced')    prefixes.push('Theocratic')
-  // if (state.decentralization > 75)           prefixes.push('Federal')
-  // if (state.pressFreedome < 20)              prefixes.push('Censored')
+
+  // Tricameral + high authority = federated feel
+  if (state.legislatureStructure === 'tricameral' && s.authority > 55 && !noLeg)
+    prefixes.push('Federated')
+
+  // Unicameral + strong exec + low authority score = rubber-stamp parliament
+  if (state.legislatureStructure === 'unicameral' && state.execPower > 70 && s.authority < 40)
+    prefixes.push('Guided')
+
+  // Party-appointed + any legislature = party-state
+  if (state.selectionMethod === 'party' && !noLeg && !suppress.includes(base))
+    prefixes.push('Party-State')
 
   return prefixes.length > 0
     ? `${prefixes.join(' ')} ${base}`
@@ -126,6 +148,14 @@ export function getPhilosophies(state, s) {
   if (s.authority < 30 && !p.includes('totalitarianism') && !p.includes('militarism'))     p.push('authoritarianism')
   if (state.selectionMethod === 'party')                                                     p.push('oligarchy')
   if (state.hosType === 'council' && state.selectionMethod !== 'popular')                   p.push('technocracy')
+  if (state.hosType === 'council' && state.legislatureStructure !== 'none')                 p.push('council_democracy')
+
+  // Legislature-driven philosophies
+  if (state.legislatureStructure === 'bicameral' && s.authority > 50)                      p.push('bicameralism')
+  if (state.legislatureStructure === 'tricameral')                                          p.push('consociationalism')
+  if (state.legislatureStructure !== 'none' && state.selectionMethod === 'legislature')     p.push('parliamentarism')
+  if (state.legislatureStructure === 'none' && s.authority < 35 && state.hosType === 'president') p.push('caesarism')
+  if (state.legislatureStructure === 'none' && state.selectionMethod === 'popular' && s.authority < 40) p.push('bonapartism')
 
   if (s.social < 30)        p.push('conservatism')
   else if (s.social > 70)   p.push('progressivism')
@@ -134,7 +164,7 @@ export function getPhilosophies(state, s) {
   else if (s.economic > 75) p.push('laissez_faire')
 
   const seen = new Set()
-  return p.filter(k => { if (seen.has(k)) return false; seen.add(k); return true }).slice(0, 5)
+  return p.filter(k => { if (seen.has(k)) return false; seen.add(k); return true }).slice(0, 7)
 }
 
 function rotatePoint(x, y, z, rx, ry) {

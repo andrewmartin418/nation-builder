@@ -193,7 +193,7 @@ export default function GovernanceTab({ state, setState }) {
         </Field>
       </Section>
 
-      <Section title="Legislature">
+      <Section title="Legislature" defaultOpen={false}>
           <Field label="Structure">
           <SelectInput
             value={state.legislatureStructure}
