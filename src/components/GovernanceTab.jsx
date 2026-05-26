@@ -218,6 +218,20 @@ const TERM_LIMITS = [
   { value: 'hard', label: 'Hard' },
 ]
 
+export const ELIGIBLE_CLASSES = [
+  { value: 'unrestricted',   label: 'Unrestricted — any citizen' },
+  { value: 'military',       label: 'Military officers' },
+  { value: 'party_cadre',    label: 'Party cadres' },
+  { value: 'aristocracy',    label: 'Landed aristocracy' },
+  { value: 'clergy',         label: 'Clergy / religious scholars' },
+  { value: 'technocrat',     label: 'Technocrats / academics' },
+  { value: 'merchant',       label: 'Merchant / financial elite' },
+  { value: 'legal',          label: 'Legal / judicial class' },
+  { value: 'vanguard',       label: 'Revolutionary vanguard' },
+  { value: 'tribal',         label: 'Tribal / clan elders' },
+  { value: 'exam',           label: 'Any citizen — meritocratic exam' },
+]
+
 function termLabel(length, isHereditary) {
   if (isHereditary) return 'Lifetime'
   if (length >= 40)  return 'Lifetime'
@@ -289,6 +303,14 @@ export default function GovernanceTab({ state, setState }) {
             value={state.selectionMethod}
             onChange={v => setState(s => ({ ...s, selectionMethod: v }))}
             options={SELECTION_METHODS_ALL}
+          />
+        </Field>
+
+        <Field label="Eligible Class">
+          <SelectInput
+            value={state.hosEligibleClass}
+            onChange={v => setState(s => ({ ...s, hosEligibleClass: v }))}
+            options={ELIGIBLE_CLASSES}
           />
         </Field>
 
