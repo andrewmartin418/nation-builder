@@ -21,6 +21,7 @@ const PHILOSOPHIES = {
   militarism:              { name: 'Militarism',                desc: 'Military values and hierarchy extended to civil governance.',                color: '#A32D2D' },
   sortition:               { name: 'Sortition / Demarchy',      desc: 'Random selection as the basis for democratic legitimacy.',                  color: '#D4537E' },
   constitutional_monarchy: { name: 'Constitutional Monarchy',   desc: 'Monarchy constrained by law and parliamentary tradition.',                  color: '#EF9F27' },
+  theocracy:               { name: 'Theocracy',                 desc: 'Religious authority as the basis of political legitimacy and law.', color: '#C4A35A' },
   // Social axis
   conservatism:            { name: 'Social Conservatism',       desc: 'Traditional values, cultural continuity, moral order.',                     color: '#C8861A' },
   progressivism:           { name: 'Social Progressivism',      desc: 'Reform-oriented, expansive civil liberties, cultural change.',              color: '#5DCAA5' },
@@ -65,6 +66,7 @@ export function score(state) {
     case 'president':      authority += 5;                break
     case 'supreme_leader': social -= 15; authority -= 35; economic -= 15; break
     case 'council':        authority += 10;               break
+    case 'khan':        social -= 10; authority -= 15; economic += 5; break
     case 'none':           social += 20; authority += 40; economic += 20; break
   }
 
@@ -85,6 +87,19 @@ export function score(state) {
     case 'none': authority -= 15; break
     case 'soft': authority -= 5;  break
     case 'hard': authority += 12; break
+  }
+
+  switch (state.hosEligibleClass) {
+    case 'military':     authority -= 10; social -= 5;               break
+    case 'party_cadre':  authority -= 15; economic -= 10;            break
+    case 'aristocracy':  authority -= 10; social -= 15; economic += 5; break
+    case 'clergy':       social -= 20; authority -= 5;               break
+    case 'technocrat':   authority += 10; economic += 5;             break
+    case 'merchant':     economic += 15; social += 5;                break
+    case 'legal':        authority += 8;                             break
+    case 'vanguard':     authority -= 20; social += 5; economic -= 15; break
+    case 'tribal':       social -= 15; authority -= 10; economic += 5; break
+    case 'exam':         authority += 12; social += 5;               break
   }
 
   switch (state.hogType) {
@@ -129,6 +144,12 @@ export function getGovType(state, s) {
   else if (state.hosType === 'supreme_leader' && s.authority < 15)                                                         base = 'Totalitarian State'
   else if (state.hosType === 'supreme_leader' && s.authority < 35)                                                         base = 'Authoritarian State'
   else if (state.hosType === 'supreme_leader')                                                                              base = 'One-Party State'
+  else if (state.hosType === 'khan' && state.selectionMethod === 'military')           base = 'Military Khanate'
+  else if (state.hosType === 'khan' && state.selectionMethod === 'hereditary' && s.authority < 25) base = 'Great Khanate'
+  else if (state.hosType === 'khan' && state.selectionMethod === 'hereditary')         base = 'Khanate'
+  else if (state.hosType === 'khan' && state.selectionMethod === 'popular')            base = 'Elected Khanate'
+  else if (state.hosType === 'khan' && state.selectionMethod === 'lottery')            base = 'Sortive Khanate'
+  else if (state.hosType === 'khan')                                                   base = 'Khanate'
   else if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 60 && state.hogType !== 'none') base = 'Parliamentary Monarchy'
   else if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 40)                     base = 'Constitutional Monarchy'
   else if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority < 20)                     base = 'Absolute Monarchy'
@@ -157,7 +178,8 @@ export function getGovType(state, s) {
   const noLeg = state.legislatureStructure === 'none'
   const suppress = ['Absolute Monarchy', 'Totalitarian State', 'Authoritarian State', 'Military Dictatorship',
     'Stateless / Anarchic', 'Military Junta', 'Monarchic Military Junta', 'Presidential Dictatorship',
-    'One-Party State', 'Direct Democracy', 'Elective Monarchy', 'Sortive Monarchy']
+    'One-Party State', 'Direct Democracy', 'Elective Monarchy', 'Sortive Monarchy',
+    'Military Khanate', 'Great Khanate', 'Khanate', 'Elected Khanate', 'Sortive Khanate']
 
   if (noLeg && !suppress.includes(base))
     prefixes.push('Autocratic')
@@ -165,7 +187,7 @@ export function getGovType(state, s) {
   if (state.legislatureStructure === 'tricameral' && s.authority > 55 && !noLeg)
     prefixes.push('Federated')
 
-  if (state.legislatureStructure === 'unicameral' && state.powerHoS > 65 && s.authority < 40)
+  if (state.legislatureStructure === 'unicameral' && state.powerHoS > 65 && s.authority > 40)
     prefixes.push('Guided')
 
   if (state.selectionMethod === 'party' && !noLeg && !suppress.includes(base))
@@ -186,6 +208,27 @@ export function getGovType(state, s) {
   if (s.authority > 80 && !base.includes('Liberal') && !suppress.includes(base))
     prefixes.push('Liberal')
 
+  if (state.hosEligibleClass === 'tribal')
+    prefixes.push('Tribal')
+
+  if (state.hosEligibleClass === 'clergy' && !suppress.includes(base))
+    prefixes.push('Theocratic')
+
+  if (state.hosEligibleClass === 'technocrat' && !suppress.includes(base))
+    prefixes.push('Technocratic')
+
+  if (state.hosEligibleClass === 'military' && state.selectionMethod !== 'military' && !suppress.includes(base))
+    prefixes.push('Stratocratic')
+
+  if (state.hosEligibleClass === 'merchant' && !suppress.includes(base))
+    prefixes.push('Mercantile')
+
+  if (state.hosEligibleClass === 'exam' && !suppress.includes(base))
+    prefixes.push('Meritocratic')
+
+  if (state.hosEligibleClass === 'vanguard' && !suppress.includes(base))
+    prefixes.push('Vanguard')
+
   return prefixes.length > 0 ? `${prefixes.join(' ')} ${base}` : base
 }
 
@@ -197,6 +240,10 @@ export function getPhilosophies(state, s) {
   if (state.hosType === 'supreme_leader' && s.authority < 40)                                     p.push('authoritarianism')
   if (state.selectionMethod === 'military')                                                        p.push('militarism')
   if (state.selectionMethod === 'lottery')                                                         p.push('sortition')
+
+  if (state.hosType === 'khan')  p.push('militarism')
+  if (state.hosType === 'khan' && state.selectionMethod === 'hereditary')  p.push('monarchism')
+  if (state.hosType === 'khan' && s.authority < 30)  p.push('authoritarianism')
 
   if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority > 50)  p.push('constitutional_monarchy')
   else if (state.hosType === 'monarch' && state.selectionMethod === 'hereditary' && s.authority < 25) p.push('absolute_monarchy_phil')
@@ -214,6 +261,14 @@ export function getPhilosophies(state, s) {
 
   if (state.selectionMethod === 'hereditary' && state.hosType !== 'monarch')                      p.push('aristocracy')
   if (state.selectionMethod === 'legislature' && state.hogType === 'none')                        p.push('meritocracy')
+
+  if (state.hosEligibleClass === 'clergy')                                      p.push('theocracy')
+  if (state.hosEligibleClass === 'technocrat')                                  p.push('technocracy')
+  if (state.hosEligibleClass === 'military')                                    p.push('militarism')
+  if (state.hosEligibleClass === 'aristocracy')                                 p.push('aristocracy')
+  if (state.hosEligibleClass === 'exam')                                        p.push('meritocracy')
+  if (state.hosEligibleClass === 'merchant' && s.economic > 60)                p.push('laissez_faire')
+  if (state.hosEligibleClass === 'party_cadre' || state.hosEligibleClass === 'vanguard') p.push('oligarchy')
 
   if (state.legislatureStructure === 'bicameral' && s.authority > 50)                            p.push('bicameralism')
   if (state.legislatureStructure === 'tricameral')                                                p.push('consociationalism')

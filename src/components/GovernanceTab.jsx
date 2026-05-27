@@ -169,6 +169,7 @@ const HOS_TYPES = [
   { value: 'monarch',        label: 'Monarch' },
   { value: 'supreme_leader', label: 'Supreme Leader' },
   { value: 'council',        label: 'Council' },
+  { value: 'khan',           label: 'Khan' },
   { value: 'none',           label: 'None (Stateless)' },
 ]
 
@@ -421,10 +422,7 @@ export default function GovernanceTab({ state, setState }) {
         </Reveal>
       </Section>
 
-      {/* Power Distribution — always visible */}
-      <div className="pt-4">
-        <p className="text-[10px] uppercase tracking-[0.15em] text-gray-600 mb-3">Power Distribution</p>
-
+      <Section title="Power Distribution">
         <PowerSlider
           label={state.hosType === 'none' ? 'Head of State' : state.hosType.replace(/_/g, ' ')}
           value={state.powerHoS}
@@ -468,7 +466,7 @@ export default function GovernanceTab({ state, setState }) {
             </div>
           ))}
         </div>
-      </div>
+      </Section>
 
     </div>
   )
